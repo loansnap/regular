@@ -5,6 +5,18 @@ class Everything:
         return True
 everything = Everything()
 
+def get_default(obj, key):
+    # Equivalent of .get(key, None) on dicts, but works on non-dicts.
+    try:
+        return obj[key]
+    except:
+        pass
+
+    try:
+        return obj.__getattribute__(key)
+    except:
+        return None
+
 def unique(matches):
     # TODO: write a not-terrible unique function. Requires recursively changing dicts to something hashable.
     result = []
@@ -55,7 +67,7 @@ def match_simple(template, data, symbols=everything):
     partials = []
     if type(template) == dict:
         for key in template:
-            partials.append(match_simple(template.get(key, None), data.get(key, None), symbols))
+            partials.append(match_simple(template.get(key, None), get_default(data, key), symbols))
     elif type(template) == list:
         for target_element in template:
             matches = []

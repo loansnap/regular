@@ -1,5 +1,6 @@
 from .format import format
 from .match import match
+from .merge import merge
 from .simple import get_symbols
 from .symbol import S, TransSymbol, Nullable
 
@@ -7,34 +8,6 @@ from copy import deepcopy
 
 # See README for usage info
 
-
-def add_path(path, mapping):
-    # TODO: this code is very similar to match_simple. It really seems like there should be some way to share code between the two. Can either function be implemented using the other?
-    # Note: by construction, should never have Nullable mapping here.
-    if type(path) == dict:
-        for k in path:
-            if k in mapping:
-                add_path(path[k], mapping[k])
-            else:
-                mapping[k] = deepcopy(path[k])
-        return
-    elif type(path) == list:
-        for path_item in path:
-            found_match = False
-            for mapping_item in mapping:
-                try:
-                    # attempt match; error means no match
-                    add_path(path_item, mapping_item)
-                    found_match = True
-                    break
-                except:
-                    continue
-            if not found_match:
-                raise Exception("No match: " + str(path_item) + " vs " + str(mapping))
-        return
-    elif path == mapping:
-        return
-    raise Exception("No match: " + str(path) + " vs " + str(mapping))
 
 # Symbolic Address allows us to write things like application.borrower_profile.name, and translate it to the template
 # {borrower_profile: {name: S('application.borrower_profile.name')}}
@@ -102,12 +75,15 @@ class SymbolicAddress:
 
         expansion_reverse = {}
         for path in paths:
-            add_path(path, expansion_reverse)
+            merge(path, expansion_reverse)
         return expansion_reverse
 
     @staticmethod
     def reverse_format(mapping, match_obj):
         # This method might be better called "parse"
+        # NOTE: this method will NOT work with multi-field transforms.
+        # That functionality requires a total overhaul of Regular, to address objects rather than just symbols.
+        # A future rewrite may focus on match/replace rather than match/format, which could make this tractable.
         expansion = SymbolicAddress.get_expansion(mapping)
         return format(expansion, match_obj)
 

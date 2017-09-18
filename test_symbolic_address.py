@@ -55,3 +55,25 @@ class TestSymbolicAddress(unittest.TestCase):
         m = match(template, data)
         result = SymbolicAddress.reverse_format(template, m)
         self.assertEqual(result, {'application': {'hypothetical_mortgage': {'name': 'john'}}})
+
+    def test_multifield_tranformation(self):
+        data = {'profile':{'first_name': 'john', 'last_name': 'wentworth', 'has_hat': True}}
+        application = SymbolicAddress('application')
+
+        def name_transform(address):
+            def forward(profile):
+                return profile['first_name'] + ' ' + profile['last_name']
+
+            def reverse(name):
+                return {'first_name': name.split()[0], 'last_name': name.split()[-1]}
+
+            return Trans(address, forward, reverse)
+        template = {'name': name_transform(application.profile), 'hatty': application.profile.has_hat}
+
+        one_way = format(template, {'application': data})
+        self.assertEqual(one_way, {'name': 'john wentworth', 'hatty': True})
+
+        # TODO: implement reverse_format for multifield transformations. See note in reverse_format.
+        #m = match(template, one_way)
+        #other_way = SymbolicAddress.reverse_format(template, m)
+        #self.assertEqual(other_way, data)
