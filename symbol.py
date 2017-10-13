@@ -18,9 +18,10 @@ def identity(x):
 class TransSymbol:
     # A Symbol or SymbolicAddress with a transformation applied
     # TODO: reverse transformation currently not applied during match. Use it.
-    def __init__(self, symbol, forward=identity, reverse=identity):
+    def __init__(self, symbol, forward=identity, reverse=identity, multi=False):
         # Can either pass a single dict, or a pair of functions
         self._symbol = symbol
+        self._multi = multi
 
         if type(forward) == dict:
             reverse = {v:k for k,v in forward.items()}
