@@ -82,11 +82,9 @@ def match_simple(template, data, symbols=everything):
                     continue
             if not found_match:
                 # TODO: find some library to serialize stuff into something short but useful.
-                #raise Exception("No match: " + str(target_element) + " vs " + str(data))
                 raise Exception("No match!")
             partials.append(matches)
     elif template != data:
-        #raise Exception("No match: " + str(template) + " vs " + str(data))
         raise Exception("No match!")
 
     #print(partials)

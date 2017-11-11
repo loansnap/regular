@@ -45,7 +45,7 @@ def format_lists(template, match_obj):
             result += format_multi(subtemplate, match_obj)
         return result
     elif type(template) == Nullable:
-        result = format_lists(template.contents)
+        result = format_lists(template.contents, match_obj)
         if get_symbols(result):
             return Nullable(result)
         return Nullable(result)
