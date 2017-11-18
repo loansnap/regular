@@ -91,6 +91,23 @@ As the number of variables with multiple independent matches grows, the list of 
 [TODO: add a section here on SymbolicAddress and other features.]
 
 
+# Update 2017/11
+Regular now supports joins, e.g. this example from the tests:
+```python
+>>> data = {'names': [{'ssn': 123456789, 'name': 'mario'}, {'ssn': 987654321, 'name': 'luigi'}],
+            'hats': [{'ssn': 123456789, 'hat_color': 'red'}, {'ssn': 987654321, 'hat_color': 'green'}]}
+>>> match_template = {'names': [{'ssn': S('ssn'), 'name':S('name')}],
+                      'hats': [{'ssn': S('ssn'), 'hat_color': S('color')}]}
+>>> format_template = [{'name': S('name'), 'ssn': S('ssn'), 'color': S('color')}]
+>>> format(format_template, match(match_template, data)
+    [{'name': 'mario', 'ssn': 123456789, 'color': 'red'},
+     {'name': 'luigi', 'ssn': 987654321, 'color': 'green'}]
+```
+The upshot of this is that Regular's expressive power is now on par with SQL. We are firmly out of the territory of regular languages... maybe it's time to drop the old moniker in favor of "Free"?
+
+WARNING: joins will be ignored unless format() explicitly uses the join variable. The example above would return a full cartesian product if the format_template did not use ssn. This is because format() is lazy: if it doesn't need a symbol, that symbol will be completely ignored.
+
+
 # Why?
 Regular is ultimately useful because it allows us to replace functions with data structures. When a function is represented by a data structure, we can automatically do things like:
 - Compute the inverse function (i.e. reverse a map)

@@ -1,5 +1,5 @@
 from .match import match, Match
-from .simple import match_simple, format_simple_single, format_simple, get_symbols
+from .simple import match_simple, format_simple_single, format_simple, get_symbols, NoMatchException
 from .symbol import Nullable
 
 # See README for usage info
@@ -19,7 +19,7 @@ def get_singles(template):
 
 def format_multi(template, match_obj):
     # Assumption: outermost level of template is NOT a list.
-    singles = get_singles(template)
+    singles = get_singles(template)  # Get symbols in the template which are NOT inside any list
     matches = match_simple(match_obj.template, match_obj.data, symbols=singles)
     # print(singles, matches)
 
@@ -42,13 +42,17 @@ def format_lists(template, match_obj):
     elif type(template) == list:
         result = []
         for subtemplate in template:
-            result += format_multi(subtemplate, match_obj)
+            try:
+                result += format_multi(subtemplate, match_obj)
+            except NoMatchException:
+                # Just don't add anything to the result list
+                pass
         return result
     elif type(template) == Nullable:
         result = format_lists(template.contents, match_obj)
         if get_symbols(result):
             return Nullable(result)
-        return Nullable(result)
+        return result
     return template
 
 

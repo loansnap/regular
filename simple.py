@@ -1,5 +1,8 @@
 from .symbol import Nullable, TransSymbol
 
+class NoMatchException(Exception):
+    pass
+
 class Everything:
     def __contains__(self, item):
         return True
@@ -43,6 +46,13 @@ def cartesian(partials):
     result = []
     for remainder in cartesian(partials[1:]):
         for candidate in partials[0]:
+            # If the two symbol sets have any symbols in common, then match on their values
+            # TODO: make this more efficient
+            common = set(remainder).intersection(candidate)
+            if {k: remainder[k] for k in common} != {k: candidate[k] for k in common}:
+                continue
+
+            # The "cartesian" part
             full = {k:v for k,v in remainder.items()}
             full.update(candidate)
             result.append(full)
@@ -72,7 +82,7 @@ def match_simple(template, data, symbols=everything):
         for target_element in template:
             matches = []
             found_match = False
-            for candidate_element in data:
+            for candidate_element in (data or []):
                 try:
                     # attempt match; error means no match
                     # Note: can return something empty *without* an error; this means match is successful, there just weren't any symbols
@@ -82,10 +92,10 @@ def match_simple(template, data, symbols=everything):
                     continue
             if not found_match:
                 # TODO: find some library to serialize stuff into something short but useful.
-                raise Exception("No match!")
+                raise NoMatchException()
             partials.append(matches)
     elif template != data:
-        raise Exception("No match!")
+        raise NoMatchException()
 
     #print(partials)
     return unique(cartesian(partials))

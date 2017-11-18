@@ -86,6 +86,22 @@ class TestFull(unittest.TestCase):
         result = format(template, m)
         self.assertEqual(result, data)
 
+    # Test 8: Join on a repeated symbol
+    def test_join(self):
+        data = {'names': [{'ssn': 123456789, 'name': 'mario'}, {'ssn': 987654321, 'name': 'luigi'}],
+                'hats': [{'ssn': 123456789, 'hat_color': 'red'}, {'ssn': 987654321, 'hat_color': 'green'}]}
+        match_template = {'names': [{'ssn': S('ssn'), 'name':S('name')}],
+                          'hats': [{'ssn': S('ssn'), 'hat_color': S('color')}]}
+        format_template = [{'name': S('name'), 'ssn': S('ssn'), 'color': S('color')}]
+        # NOTE: one major drawback of the current code is that format() must USE a symbol in order to join on it.
+        # E.g., this example would do a full cartesian product rather than a join if S('ssn') were omitted from format_template.
+        expected = [{'name': 'mario', 'ssn': 123456789, 'color': 'red'},
+                    {'name': 'luigi', 'ssn': 987654321, 'color': 'green'}]
+
+        m = match(match_template, data)
+        result = format(format_template, m)
+        self.assertEqual(result, expected)
+
 
 if __name__ == '__main__':
     unittest.main()
