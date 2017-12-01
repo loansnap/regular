@@ -1,3 +1,4 @@
+import responses
 from .format import clean, format
 from .match import match
 from .symbol import S, TransSymbol as Trans
@@ -8,6 +9,7 @@ module_dir = os.path.dirname(__file__)
 
 
 class TestSymbolicAddress(unittest.TestCase):
+    @responses.activate
     def test_dot(self):
         w = SymbolicAddress('w')
         template = {'a':{'b':w.x, 'c':w.y.v}, 'd':w.y.u}
@@ -15,6 +17,7 @@ class TestSymbolicAddress(unittest.TestCase):
         expansion = SymbolicAddress.get_expansion(template)
         self.assertEqual(expansion, {'w': {'y': {'v': S('w.y.v'), 'u': S('w.y.u')}, 'x': S('w.x')}})
 
+    @responses.activate
     def test_indexing(self):
         loan = SymbolicAddress('loan')
         template = {'borrowers': [{'name': loan.applications[{'appIndex':0}].borrower.name},
@@ -27,6 +30,7 @@ class TestSymbolicAddress(unittest.TestCase):
              'borrower': {'name': S("loan.applications[{'appIndex': 0}].borrower.name")}}
         ]}})
 
+    @responses.activate
     def test_reverse_format(self):
         data = [{'name': 'john', 'addresses': [{'state': 'CA'}, {'state': 'CT'}]},
                 {'name': 'allan', 'addresses': [{'state': 'CA'}, {'state': 'WA'}]}]
@@ -38,6 +42,7 @@ class TestSymbolicAddress(unittest.TestCase):
         # Note that only one result is returned
         self.assertEqual(result, {'record': {'name': 'john', 'state': 'CA'}})
 
+    @responses.activate
     def test_tranformation_function(self):
         data = {"propertyEstimatedValueAmount": 400000.0}
         application = SymbolicAddress('application')
@@ -47,6 +52,7 @@ class TestSymbolicAddress(unittest.TestCase):
         result = SymbolicAddress.reverse_format(template, m)
         self.assertEqual(result, {'application':{'hypothetical_mortgage': {'property': {'estimated_value_amount': 400000}}}})
 
+    @responses.activate
     def test_transformation_map(self):
         data = {'name':'John'}
         application = SymbolicAddress('application')
@@ -56,6 +62,7 @@ class TestSymbolicAddress(unittest.TestCase):
         result = SymbolicAddress.reverse_format(template, m)
         self.assertEqual(result, {'application': {'hypothetical_mortgage': {'name': 'john'}}})
 
+    @responses.activate
     def test_multifield_tranformation(self):
         data = {'profile':{'first_name': 'john', 'last_name': 'wentworth', 'has_hat': True}}
         application = SymbolicAddress('application')

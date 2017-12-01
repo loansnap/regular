@@ -1,3 +1,4 @@
+import responses
 from .match import match
 from .format import format
 from .symbol import S, Nullable, TransSymbol as Trans
@@ -7,6 +8,7 @@ import random, unittest
 
 class TestFull(unittest.TestCase):
     # Test 1: Single match, no lists
+    @responses.activate
     def test_single_match(self):
         data = {'name': 'john'}
         template = {'name': S('name')}
@@ -16,6 +18,7 @@ class TestFull(unittest.TestCase):
         self.assertEqual(result, data)
     
     # Test 2: Two matches
+    @responses.activate
     def test_two_matches(self):
         data = [{'name':'john'}, {'name':'abe'}]
         template = [{'name': S('name')}]
@@ -25,6 +28,7 @@ class TestFull(unittest.TestCase):
         self.assertEqual(result, data)
     
     # Test 3: Transposition
+    @responses.activate
     def test_transposition(self):
         data = [{'name':'john', 'addresses':[{'state':'CA'}, {'state':'CT'}]},
                 {'name': 'allan', 'addresses':[{'state':'CA'}, {'state':'WA'}]}]
@@ -39,6 +43,7 @@ class TestFull(unittest.TestCase):
         self.assertEqual(result, expected)
     
     # Test 4: Cartesian product stress test
+    @responses.activate
     def test_cartesian_product(self):
         data = {'u':[random.random() for i in range(1000)],
                 'v':[random.random() for i in range(1000)],
@@ -53,6 +58,7 @@ class TestFull(unittest.TestCase):
         self.assertEqual(result, data)
 
     # Test 5: Nullable
+    @responses.activate
     def test_nullable(self):
         data = {}
         template = {'person': Nullable([{'name':S('name')}])}
@@ -60,6 +66,7 @@ class TestFull(unittest.TestCase):
         m = match(template, data).get_single()  # Should not raise an exception
 
     # Test 6: Nullable conserved by format when symbols remain
+    @responses.activate
     def test_nullable_conserved(self):
         data = {'state':'CA'}
         template = {'person': Nullable([{'name':S('name')}]), 'state':S('state')}
@@ -76,6 +83,7 @@ class TestFull(unittest.TestCase):
         self.assertIsNotNone(exception)
 
     # Test 7: Transformation closed-loop test
+    @responses.activate
     def test_transformation(self):
         data = {'state':'California'}
         template = {'state': Trans(S('state'), {'CA': 'California'})}
