@@ -94,6 +94,16 @@ class TestFull(unittest.TestCase):
         result = format(template, m)
         self.assertEqual(result, data)
 
+    # Test 7.5: Transformation closed-loop test with function transformation
+    def test_transformation_2(self):
+        data = {'yrs': 12.5}
+        parse_template = {'yrs': S('yrs')}
+        format_template = {'residency': Trans(S('yrs'), int)}
+
+        m = match(parse_template, data)
+        result = format(format_template, m)
+        self.assertEqual(result, {'residency': 12})
+
     # Test 8: Join on a repeated symbol
     def test_join(self):
         data = {'names': [{'ssn': 123456789, 'name': 'mario'}, {'ssn': 987654321, 'name': 'luigi'}],

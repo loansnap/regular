@@ -1,11 +1,13 @@
 from .match import match, Match
 from .simple import match_simple, format_simple_single, format_simple, get_symbols, NoMatchException
-from .symbol import Nullable
+from .symbol import Nullable, TransSymbol
 
 # See README for usage info
 
 
 def get_singles(template):
+    if type(template) == TransSymbol:
+        return get_singles(template._symbol)
     if hasattr(template, '__substitute__'):
         return [template]
     if type(template) == list:
