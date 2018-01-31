@@ -68,9 +68,7 @@ class SymbolicAddress:
 
         paths = []
         for symbol in symbols:
-            if type(symbol) == TransSymbol and not symbol._multi and type(symbol._symbol) == SymbolicAddress:
-                paths.append({symbol._symbol._base_name: symbol._symbol._path})
-            elif type(symbol) == SymbolicAddress:
+            if type(symbol) == SymbolicAddress:
                 paths.append({symbol._base_name: symbol._path})
 
         expansion_reverse = {}

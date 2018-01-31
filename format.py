@@ -55,6 +55,11 @@ def format_lists(template, match_obj):
         if get_symbols(result):
             return Nullable(result)
         return result
+    elif type(template) == TransSymbol:
+        result = format_lists(template._symbol, match_obj)
+        if not get_symbols(result):
+            return template._forward(result)
+        return TransSymbol(result, template._forward, template._reverse)
     return template
 
 
@@ -72,7 +77,14 @@ def clean(template):
     if type(template) == dict:
         return {k: clean(v) for k,v in template.items() if not hasattr(v, '__substitute__') and (v is not None)}
     if type(template) == list:
-        return [clean(e) for e in template]
+        return [clean(e) for e in template if not hasattr(e, '__substitute__') and (e is not None)]
     if type(template) == Nullable:
         return clean(template.contents)
+    if type(template) == TransSymbol:
+        try:
+            return template._forward(clean(template._symbol))
+        except Exception:
+            # Failure normal, just means the ._forward function didn't have the data it needed. That's the point of clean.
+            # _forward is user-defined, so the exception could be anything.
+            return None
     return template
