@@ -62,6 +62,8 @@ def match_simple(template, data, symbols=everything):
     if not symbols:
         # Corner case, never reached by recursion.
         return [{}]
+    if type(template) == TransSymbol and (template in symbols or template._symbol in symbols):
+        return [{template._symbol: template._reverse(data)}]
     if hasattr(template, '__substitute__') and template in symbols:
         return [{template: data}]
     elif hasattr(template, '__substitute__'):
@@ -73,9 +75,7 @@ def match_simple(template, data, symbols=everything):
             return []
 
     partials = []
-    if type(template) == TransSymbol:
-        partials.append(match_simple(template._symbol, template._reverse(data), symbols))
-    elif type(template) == dict:
+    if type(template) == dict:
         for key in template:
             partials.append(match_simple(template.get(key, None), get_default(data, key), symbols))
     elif type(template) == list:
@@ -101,8 +101,6 @@ def match_simple(template, data, symbols=everything):
     return unique(cartesian(partials))
 
 def get_symbols(template):
-    if type(template) == TransSymbol:
-        return get_symbols(template._symbol)
     if hasattr(template, '__substitute__'):
         return [template]
     if type(template) == list:
@@ -123,11 +121,6 @@ def format_simple_single(template, values):
         if get_symbols(result):
             return Nullable(result)
         return result
-    elif type(template) == TransSymbol:
-        result = format_simple_single(template._symbol, values)
-        if not get_symbols(result):
-            return template._forward(result)
-        return TransSymbol(result, template._forward, template._reverse)
 
     try:
         return template.__substitute__(values)

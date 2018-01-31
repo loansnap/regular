@@ -18,37 +18,36 @@ def identity(x):
 class TransSymbol:
     # A Symbol or SymbolicAddress with a transformation applied
     # TODO: reverse transformation currently not applied during match. Use it.
-    def __init__(self, symbol, forward=identity, reverse=identity):
+    def __init__(self, symbol, forward=identity, reverse=identity, multi=False):
         # Can either pass a single dict, or a pair of functions
         self._symbol = symbol
+        self._multi = multi
 
-        self._map = None
         if type(forward) == dict:
             reverse = {v:k for k,v in forward.items()}
             # TODO: add option to fail on map miss
-            self._forward_func = lambda k: forward.get(k, None)
+            self._forward = lambda k: forward.get(k, None)
             self._reverse = lambda k: reverse.get(k, None)
             self._map = forward
         else:
-            self._forward_func = forward
+            self._forward = forward
             self._reverse = reverse
+            self._map = None
 
-    # Note that there is no corresponding wrapper for _reverse. This is a minor hack, and I haven't decided what behavior
-    # I actually want here.
-    def _forward(self, inner):
+    def __substitute__(self, values):
+        inner = self._symbol.__substitute__(values)
         try:
-            return self._forward_func(inner)
+            return self._forward(inner)
         except TypeError:
             # Hit if either forward function is None, or forward function receives None but doesn't handle it. Both ok.
             # TODO: figure out what I actually want the default behavior to be
-            return inner
-        except AttributeError:
-            # Same story
-            return inner
+            pass
+        return inner
 
     def __eq__(self, other):
         if type(other) == TransSymbol:
             return self._symbol == other._symbol
+        # TODO: probably want to match some other symbol types too.
         return False
 
     def __str__(self):

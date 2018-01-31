@@ -120,34 +120,6 @@ class TestFull(unittest.TestCase):
         result = format(format_template, m)
         self.assertEqual(result, expected)
 
-    # Tests 9 & 10: More general Transformation usage
-    def test_multi_transformation_forward(self):
-        data = [{'name': 'john', 'addresses': [{'state': 'CA'}, {'state': 'CT'}]},
-                {'name': 'allan', 'addresses': [{'state': 'CA'}, {'state': 'WA'}]}]
-        match_template = [{'name': S('name'), 'addresses': [{'state': S('state')}]}]
-        starts_j = lambda name: name[0] == 'j'
-        format_template = [{'address': {'state': S('state')}, 'names': Trans([S('name')], lambda names: list(filter(starts_j, names)))}]
-        expected = [{'address': {'state': 'CA'}, 'names': ['john']},
-                    {'address': {'state': 'CT'}, 'names': ['john']},
-                    {'address': {'state': 'WA'}, 'names': []}]
-
-        m = match(match_template, data)
-        result = format(format_template, m)
-        self.assertEqual(result, expected)
-
-    def test_multi_transformation_reverse(self):
-        data = {'names': [{'ssn': 'red', 'name': 'mario'}, {'ssn': 'green', 'name': 'luigi'}],
-                'hats': [{'ssn': 123456789, 'hat_color': 'red'}, {'ssn': 987654321, 'hat_color': 'green'}]}
-        switcheroo = lambda hat_entry: {'ssn': hat_entry['hat_color'], 'hat_color': hat_entry['ssn']}
-        match_template = {'names': [{'ssn': S('ssn'), 'name':S('name')}],
-                          'hats': [Trans({'ssn': S('ssn'), 'hat_color': S('color')}, reverse=switcheroo)]}
-        format_template = [{'name': S('name'), 'ssn': S('ssn'), 'color': S('color')}]
-        expected = [{'name': 'mario', 'ssn': 'red', 'color': 123456789},
-                    {'name': 'luigi', 'ssn': 'green', 'color': 987654321}]
-
-        m = match(match_template, data)
-        result = format(format_template, m)
-        self.assertEqual(result, expected)
 
 if __name__ == '__main__':
     unittest.main()
