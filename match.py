@@ -1,4 +1,4 @@
-from .simple import match_simple
+from .simple import match_simple, NoMatchException
 
 # See README for usage info
 
@@ -8,6 +8,14 @@ def match(template, data):
     # Our problem is to represent all those values and dependencies efficiently.
     # So, we do the obvious thing and just punt the whole problem.
     return Match(template, data)
+
+def can_match(template, data):
+    # WARNING: THIS METHOD WILL COMPUTE ALL POSSIBLE MATCHES
+    try:
+        match(template, data).get_single()
+    except NoMatchException:
+        return False
+    return True
 
 
 class Match:
