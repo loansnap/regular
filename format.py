@@ -1,5 +1,5 @@
 from .match import match, Match
-from .simple import match_simple, format_simple_single, format_simple, get_symbols, NoMatchException
+from .simple import match_simple, format_simple_single, format_simple, get_symbols, NoMatchException, FailedInverseException
 from .symbol import Nullable, TransSymbol
 
 # See README for usage info
@@ -55,24 +55,43 @@ def format_lists(template, match_obj):
         if get_symbols(result):
             return Nullable(result)
         return result
+    elif type(template) == TransSymbol:
+        result = format_lists(template._symbol, match_obj)
+        if not get_symbols(result):
+            return template._forward(result)
+        return TransSymbol(result, template._forward, template._reverse)
     return template
 
 
 def format(template, match_obj):
-    if type(match_obj) != Match:
-        # TODO: duck type for Match object
-        return format_simple(template, match_obj)
-    elif type(template) != list:
-        return format_multi(template, match_obj)[0]
+    err = None
+    try:
+        if type(match_obj) != Match:
+            # TODO: duck type for Match object
+            return format_simple(template, match_obj)
+        elif type(template) != list:
+            return format_multi(template, match_obj)[0]
 
-    return format_lists(template, match_obj)
+        return format_lists(template, match_obj)
+    except NoMatchException as e:
+        err = NoMatchException()
+    except FailedInverseException as e:
+        err = FailedInverseException('forward(reverse(x)) must be x when using a TransSymbol in match() template.')
+    # This *should* result in giving an error without a deep recursive stack trace into regular's internals
+    raise err
 
 
 def clean(template):
     if type(template) == dict:
-        return {k: clean(v) for k,v in template.items() if not hasattr(v, '__substitute__') and (v is not None)}
+        cleaned_template = {k: clean(v) for k,v in template.items() if not hasattr(v, '__substitute__')}
+        return {k: v for k,v in cleaned_template.items() if (v is not None)}
     if type(template) == list:
-        return [clean(e) for e in template]
+        return [clean(e) for e in template if not hasattr(e, '__substitute__') and (e is not None)]
     if type(template) == Nullable:
         return clean(template.contents)
+    if type(template) == TransSymbol:
+        if len(get_symbols(template._symbol)) == 0:
+            return clean(template._forward(template._symbol))
+        # The TransSymbol didn't have the data it needed, so we get rid of it. That's the point of clean.
+        return None
     return template

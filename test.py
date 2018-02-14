@@ -2,6 +2,7 @@ import responses
 from .match import match
 from .format import format
 from .symbol import S, Nullable, TransSymbol as Trans
+from .simple import FailedInverseException
 
 import random, unittest
 
@@ -120,6 +121,75 @@ class TestFull(unittest.TestCase):
         result = format(format_template, m)
         self.assertEqual(result, expected)
 
+    # Tests 9 & 10: More general Transformation usage
+    def test_multi_transformation_forward(self):
+        data = [{'name': 'john', 'addresses': [{'state': 'CA'}, {'state': 'CT'}]},
+                {'name': 'allan', 'addresses': [{'state': 'CA'}, {'state': 'WA'}]}]
+        match_template = [{'name': S('name'), 'addresses': [{'state': S('state')}]}]
+        starts_j = lambda name: name[0] == 'j'
+        format_template = [{'address': {'state': S('state')}, 'names': Trans([S('name')], lambda names: list(filter(starts_j, names)))}]
+        expected = [{'address': {'state': 'CA'}, 'names': ['john']},
+                    {'address': {'state': 'CT'}, 'names': ['john']},
+                    {'address': {'state': 'WA'}, 'names': []}]
+
+        m = match(match_template, data)
+        result = format(format_template, m)
+        self.assertEqual(result, expected)
+
+    def test_multi_transformation_reverse(self):
+        data = {'names': [{'ssn': 'red', 'name': 'mario'}, {'ssn': 'green', 'name': 'luigi'}],
+                'hats': [{'ssn': 123456789, 'hat_color': 'red'}, {'ssn': 987654321, 'hat_color': 'green'}]}
+        switcheroo = lambda hat_entry: {'ssn': hat_entry['hat_color'], 'hat_color': hat_entry['ssn']}
+        match_template = {'names': [{'ssn': S('ssn'), 'name':S('name')}],
+                          'hats': [Trans({'ssn': S('ssn'), 'hat_color': S('color')}, forward=switcheroo, reverse=switcheroo)]}
+        format_template = [{'name': S('name'), 'ssn': S('ssn'), 'color': S('color')}]
+        expected = [{'name': 'mario', 'ssn': 'red', 'color': 123456789},
+                    {'name': 'luigi', 'ssn': 'green', 'color': 987654321}]
+
+        m = match(match_template, data)
+        result = format(format_template, m)
+        self.assertEqual(result, expected)
+
+    # If using reverse on a TransSymbol, forward(reverse(x)) must be x or the core algorithm breaks.
+    # Found this one out the hard way - h/t Marc
+    def test_trans_list_bug(self):
+        match_template = {
+            "create_date": Trans(S('created_at'), forward=lambda x: x[:-1], reverse=lambda x: x + '!'),
+            "actions": [{
+                "date": S('velocify_action_date'),
+            }]
+        }
+
+        template = {
+            "created": S('created_at'),
+            "velocify": {
+                "actions": [{
+                    "date": S('velocify_action_date'),
+                }]
+            }
+        }
+
+        data = {'create_date': '2017-12-12 07:39:06', 'actions': [{'date': '2017-12-11 11:40:56'}, {'date': '2017-12-18 11:49:56'}]}
+        expected = {'created': '2017-12-12 07:39:06!', 'velocify': {'actions': [{'date': '2017-12-11 11:40:56'}, {'date': '2017-12-18 11:49:56'}]}}
+
+        m = match(match_template, data)
+        result = format(template, m)
+        self.assertEqual(result, expected)
+
+        match_template = {
+            "create_date": Trans(S('created_at'), reverse=lambda x: x + '!'),
+            "actions": [{
+                "date": S('velocify_action_date'),
+            }]
+        }
+
+        err = None
+        try:
+            m = match(match_template, data)
+            result = format(template, m)
+        except FailedInverseException as e:
+            err = e
+        self.assertEqual(type(err), FailedInverseException)
 
 if __name__ == '__main__':
     unittest.main()

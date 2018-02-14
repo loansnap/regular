@@ -3,6 +3,9 @@ from .symbol import Nullable, TransSymbol
 class NoMatchException(Exception):
     pass
 
+class FailedInverseException(Exception):
+    pass
+
 class Everything:
     def __contains__(self, item):
         return True
@@ -62,8 +65,6 @@ def match_simple(template, data, symbols=everything):
     if not symbols:
         # Corner case, never reached by recursion.
         return [{}]
-    if type(template) == TransSymbol and (template in symbols or template._symbol in symbols):
-        return [{template._symbol: template._reverse(data)}]
     if hasattr(template, '__substitute__') and template in symbols:
         return [{template: data}]
     elif hasattr(template, '__substitute__'):
@@ -71,11 +72,16 @@ def match_simple(template, data, symbols=everything):
     elif type(template) == Nullable:
         try:
             return match_simple(template.contents, data, symbols)
-        except:
+        except NoMatchException:
             return []
 
     partials = []
-    if type(template) == dict:
+    if type(template) == TransSymbol:
+        deduced_data = template._reverse(data)
+        if template._forward(deduced_data) != data:
+            raise FailedInverseException('forward(reverse(x)) must be x when using a TransSymbol in match() template.')
+        partials.append(match_simple(template._symbol, deduced_data, symbols))
+    elif type(template) == dict:
         for key in template:
             partials.append(match_simple(template.get(key, None), get_default(data, key), symbols))
     elif type(template) == list:
@@ -88,7 +94,7 @@ def match_simple(template, data, symbols=everything):
                     # Note: can return something empty *without* an error; this means match is successful, there just weren't any symbols
                     matches += match_simple(target_element, candidate_element, symbols)
                     found_match = True
-                except:
+                except NoMatchException:
                     continue
             if not found_match:
                 # TODO: find some library to serialize stuff into something short but useful.
@@ -101,6 +107,8 @@ def match_simple(template, data, symbols=everything):
     return unique(cartesian(partials))
 
 def get_symbols(template):
+    if type(template) == TransSymbol:
+        return get_symbols(template._symbol)
     if hasattr(template, '__substitute__'):
         return [template]
     if type(template) == list:
@@ -121,6 +129,11 @@ def format_simple_single(template, values):
         if get_symbols(result):
             return Nullable(result)
         return result
+    elif type(template) == TransSymbol:
+        result = format_simple_single(template._symbol, values)
+        if not get_symbols(result):
+            return template._forward(result)
+        return TransSymbol(result, template._forward, template._reverse)
 
     try:
         return template.__substitute__(values)
