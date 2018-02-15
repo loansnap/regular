@@ -3,9 +3,6 @@ from .symbol import Nullable, TransSymbol
 class NoMatchException(Exception):
     pass
 
-class FailedInverseException(Exception):
-    pass
-
 class Everything:
     def __contains__(self, item):
         return True
@@ -78,8 +75,7 @@ def match_simple(template, data, symbols=everything):
     partials = []
     if type(template) == TransSymbol:
         deduced_data = template._reverse(data)
-        if template._forward(deduced_data) != data:
-            raise FailedInverseException('forward(reverse(x)) must be x when using a TransSymbol in match() template.')
+        partials.append([{template: data}])
         partials.append(match_simple(template._symbol, deduced_data, symbols))
     elif type(template) == dict:
         for key in template:
@@ -130,6 +126,8 @@ def format_simple_single(template, values):
             return Nullable(result)
         return result
     elif type(template) == TransSymbol:
+        if template in values:
+            return values[template]
         result = format_simple_single(template._symbol, values)
         if not get_symbols(result):
             return template._forward(result)

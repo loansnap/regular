@@ -46,10 +46,7 @@ class TransSymbol:
             # Same story
             return inner
 
-    def __eq__(self, other):
-        if type(other) == TransSymbol:
-            return self._symbol == other._symbol
-        return False
+    # TODO: proper equality & hashing for TransSymbols.
 
     def __str__(self):
         return 'Trans(' + str(self._symbol) + ')'

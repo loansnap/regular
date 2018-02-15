@@ -1,5 +1,5 @@
 from .match import match, Match
-from .simple import match_simple, format_simple_single, format_simple, get_symbols, NoMatchException, FailedInverseException
+from .simple import match_simple, format_simple_single, format_simple, get_symbols, NoMatchException
 from .symbol import Nullable, TransSymbol
 
 # See README for usage info
@@ -75,8 +75,6 @@ def format(template, match_obj):
         return format_lists(template, match_obj)
     except NoMatchException as e:
         err = NoMatchException()
-    except FailedInverseException as e:
-        err = FailedInverseException('forward(reverse(x)) must be x when using a TransSymbol in match() template.')
     # This *should* result in giving an error without a deep recursive stack trace into regular's internals
     raise err
 
@@ -90,8 +88,7 @@ def clean(template):
     if type(template) == Nullable:
         return clean(template.contents)
     if type(template) == TransSymbol:
-        if len(get_symbols(template._symbol)) == 0:
-            return clean(template._forward(template._symbol))
-        # The TransSymbol didn't have the data it needed, so we get rid of it. That's the point of clean.
+        return clean(template._forward(clean(template._symbol)))
+    if hasattr(template, '__substitute__'):
         return None
     return template

@@ -2,7 +2,6 @@ import responses
 from .match import match
 from .format import format
 from .symbol import S, Nullable, TransSymbol as Trans
-from .simple import FailedInverseException
 
 import random, unittest
 
@@ -90,7 +89,7 @@ class TestFull(unittest.TestCase):
         template = {'state': Trans(S('state'), {'CA': 'California'})}
 
         m = match(template, data)
-        self.assertEqual(m.get_single(), {S('state'): 'CA'})
+        self.assertEqual(m.get_single()['state'], 'CA')
 
         result = format(template, m)
         self.assertEqual(result, data)
@@ -141,7 +140,7 @@ class TestFull(unittest.TestCase):
                 'hats': [{'ssn': 123456789, 'hat_color': 'red'}, {'ssn': 987654321, 'hat_color': 'green'}]}
         switcheroo = lambda hat_entry: {'ssn': hat_entry['hat_color'], 'hat_color': hat_entry['ssn']}
         match_template = {'names': [{'ssn': S('ssn'), 'name':S('name')}],
-                          'hats': [Trans({'ssn': S('ssn'), 'hat_color': S('color')}, forward=switcheroo, reverse=switcheroo)]}
+                          'hats': [Trans({'ssn': S('ssn'), 'hat_color': S('color')}, reverse=switcheroo)]}
         format_template = [{'name': S('name'), 'ssn': S('ssn'), 'color': S('color')}]
         expected = [{'name': 'mario', 'ssn': 'red', 'color': 123456789},
                     {'name': 'luigi', 'ssn': 'green', 'color': 987654321}]
@@ -150,11 +149,11 @@ class TestFull(unittest.TestCase):
         result = format(format_template, m)
         self.assertEqual(result, expected)
 
-    # If using reverse on a TransSymbol, forward(reverse(x)) must be x or the core algorithm breaks.
+    # TransSymbol invertibility: things were failing if forward(reverse(x)) != x. Fixed now.
     # Found this one out the hard way - h/t Marc
     def test_trans_list_bug(self):
         match_template = {
-            "create_date": Trans(S('created_at'), forward=lambda x: x[:-1], reverse=lambda x: x + '!'),
+            "create_date": Trans(S('created_at'), reverse=lambda x: x + '!'),
             "actions": [{
                 "date": S('velocify_action_date'),
             }]
@@ -175,21 +174,6 @@ class TestFull(unittest.TestCase):
         m = match(match_template, data)
         result = format(template, m)
         self.assertEqual(result, expected)
-
-        match_template = {
-            "create_date": Trans(S('created_at'), reverse=lambda x: x + '!'),
-            "actions": [{
-                "date": S('velocify_action_date'),
-            }]
-        }
-
-        err = None
-        try:
-            m = match(match_template, data)
-            result = format(template, m)
-        except FailedInverseException as e:
-            err = e
-        self.assertEqual(type(err), FailedInverseException)
 
 if __name__ == '__main__':
     unittest.main()
