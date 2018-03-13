@@ -84,7 +84,9 @@ def clean(template):
         cleaned_template = {k: clean(v) for k,v in template.items() if not hasattr(v, '__substitute__')}
         return {k: v for k,v in cleaned_template.items() if (v is not None)}
     if type(template) == list:
-        return [clean(e) for e in template if not hasattr(e, '__substitute__') and (e is not None)]
+        cleaned_list = [clean(e) for e in template if not hasattr(e, '__substitute__') and (e is not None)]
+        cleaned_list_without_empty_dicts = [e for e in cleaned_list if (e != {})]
+        return cleaned_list_without_empty_dicts
     if type(template) == Nullable:
         return clean(template.contents)
     if type(template) == TransSymbol:
