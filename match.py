@@ -12,7 +12,7 @@ def match(template, data):
 def can_match(template, data):
     # WARNING: THIS METHOD WILL COMPUTE ALL POSSIBLE MATCHES
     try:
-        match(template, data).get_single()
+        match_simple(template, data)
     except NoMatchException:
         return False
     return True
