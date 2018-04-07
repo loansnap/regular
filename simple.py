@@ -84,6 +84,13 @@ def match_simple(template, data, symbols=everything):
         for target_element in template:
             matches = []
             found_match = False
+
+            # I put a massive hack here so that, if data isn't list-like, we wrap it in a single-element list
+            # That will allow us to handle an issue with data parsed from xml, where the parser only sticks things
+            # in lists if there's more than one of the thing (so if there's only one, it doesn't go in a list).
+            if type(data) not in set([list, tuple]):
+                data = [data]
+
             for candidate_element in (data or []):
                 try:
                     # attempt match; error means no match
