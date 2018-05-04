@@ -74,6 +74,9 @@ def match_simple(template, data, symbols=everything):
 
     partials = []
     if type(template) == TransSymbol:
+        if symbols != everything and len(set(get_symbols(template)).intersection(symbols)) == 0:
+            # template does not contain any of the symbols we care about
+            return []
         deduced_data = template._reverse(data)
         partials.append([{template: data}])
         partials.append(match_simple(template._symbol, deduced_data, symbols))

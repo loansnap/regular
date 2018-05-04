@@ -74,7 +74,7 @@ def format(template, match_obj):
 
         return format_lists(template, match_obj)
     except NoMatchException as e:
-        err = NoMatchException()
+        err = NoMatchException(e)
     # This *should* result in giving an error without a deep recursive stack trace into regular's internals
     raise err
 
