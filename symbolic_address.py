@@ -12,7 +12,7 @@ from copy import deepcopy
 # Symbolic Address allows us to write things like application.borrower_profile.name, and translate it to the template
 # {borrower_profile: {name: S('application.borrower_profile.name')}}
 # without having to write it out.
-class SymbolicAddress:
+class SymbolicAddress(object):
     def __init__(self, base_name, name=None, path=None):
         self._base_name = base_name
 
@@ -87,8 +87,8 @@ class SymbolicAddress:
 
 
 class SymbolicListAddress(SymbolicAddress):
-    def __init__(self, *args, filter=None, **kwargs):
-        self._filter = filter
+    def __init__(self, *args, **kwargs):
+        self._filter = kwargs.pop('filter', None)
         super().__init__(*args, **kwargs)
 
     def __getattr__(self, item):

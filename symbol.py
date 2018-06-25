@@ -2,10 +2,10 @@ class S(str):
     # Symbol class: the only important difference between S and str is that S has a __substitute__ method
     # Note that S('a') == 'a' is True. This lets us use strings as shorthand in certain places.
     def __str__(self):
-        return "S('" + super().__str__() + "')"
+        return "S('" + super(S, self).__str__() + "')"
 
     def __repr__(self):
-        return "S(" + super().__repr__() + ")"
+        return "S(" + super(S, self).__repr__() + ")"
 
     def __substitute__(self, values):
         return values[self]
@@ -15,7 +15,7 @@ def identity(x):
     return x
 
 
-class TransSymbol:
+class TransSymbol(object):
     # A Symbol or SymbolicAddress with a transformation applied
     # TODO: reverse transformation currently not applied during match. Use it.
     def __init__(self, symbol, forward=identity, reverse=identity):
@@ -57,7 +57,7 @@ class TransSymbol:
         return 'Trans(' + self._symbol.__repr__() + ')'
 
 
-class Nullable:
+class Nullable(object):
     # A simple wrapper class to mark part of a template as optional, i.e. match is allowed to fail.
     def __init__(self, contents):
         self.contents = contents

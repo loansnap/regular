@@ -18,7 +18,7 @@ def can_match(template, data):
     return True
 
 
-class Match:
+class Match(object):
     def __init__(self, template, data):
         self.template = template
         self.data = data
