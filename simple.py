@@ -12,12 +12,14 @@ def get_default(obj, key):
     # Equivalent of .get(key, None) on dicts, but works on non-dicts.
     try:
         return obj[key]
-    except:
+    except TypeError as e:
+        pass
+    except KeyError as e:
         pass
 
     try:
         return obj.__getattribute__(key)
-    except:
+    except AttributeError as e:
         return None
 
 def unique(matches):

@@ -16,7 +16,7 @@ class TestFull(unittest.TestCase):
         m = match(template, data)
         result = format(template, m)
         self.assertEqual(result, data)
-    
+
     # Test 2: Two matches
     @responses.activate
     def test_two_matches(self):
@@ -26,7 +26,7 @@ class TestFull(unittest.TestCase):
         m = match(template, data)
         result = format(template, m)
         self.assertEqual(result, data)
-    
+
     # Test 3: Transposition
     @responses.activate
     def test_transposition(self):
@@ -41,7 +41,7 @@ class TestFull(unittest.TestCase):
         m = match(match_template, data)
         result = format(format_template, m)
         self.assertEqual(result, expected)
-    
+
     # Test 4: Cartesian product stress test
     @responses.activate
     def test_cartesian_product(self):
@@ -174,6 +174,21 @@ class TestFull(unittest.TestCase):
         m = match(match_template, data)
         result = format(template, m)
         self.assertEqual(result, expected)
+
+    # Test 12: Make sure TransSymbol doesn't swallow errors
+    def test_trans_error(self):
+        data = {'yrs': 'foo'}
+        parse_template = {'yrs': S('yrs')}
+        format_template = {'residency': Trans(S('yrs'), int)}
+
+        m = match(parse_template, data)
+        err = None
+        try:
+            result = format(format_template, m)
+        except ValueError as e:
+            err = e
+        self.assertIsNotNone(err)
+
 
 if __name__ == '__main__':
     unittest.main()

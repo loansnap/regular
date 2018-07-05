@@ -1,11 +1,14 @@
 from .simple import get_default
 from copy import deepcopy
 
+class MergeException(Exception):
+    pass
+
 
 def set_general(target, key, value):
     try:
         target[key] = value
-    except:
+    except TypeError as e:
         target.__setattr__(key, value)
     return
 
@@ -30,12 +33,11 @@ def merge(source, target):
                     merge(source_item, target_item)  # TODO: this will mess things up if it writes something and then hits a "no match"; need to check for match separately
                     found_match = True
                     break
-                except:
+                except MergeException as e:
                     continue
             if not found_match:
-                raise Exception("No match: " + str(source_item) + " vs " + str(target))
+                raise MergeException("No match: " + str(source_item) + " vs " + str(target))
         return
-        pass
     elif source != target:
-        raise Exception("No match!")
+        raise MergeException("No match!")
     return target
