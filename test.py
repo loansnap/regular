@@ -189,6 +189,35 @@ class TestFull(unittest.TestCase):
             err = e
         self.assertIsNotNone(err)
 
+# This test recreates an issue seen here: https://www.pivotaltracker.com/story/show/166254857
+# where we are trying to match several specific dicts based on a key and that key is repeated multiple times
+# only hits when the number of duplicates is sufficiently high
+class TestPerf(unittest.TestCase):
+    def generate_template_and_values(self, number_of_titles, number_or_repeats_for_each_title):
+        # create an list of elements where the titles are the string version of an integer (for easy generation)
+        # also creates a template that looks for these titles
+        values = []
+        template = []
+        for n in list(range(number_of_titles)):
+            template.append(Nullable({ 'title': S(str(n))}))
+            # add number_or_repeats_for_each_title of each as the "title" of the dict
+            for i in list(range(number_or_repeats_for_each_title)):
+                values.append({ 'title': str(n)})
+        return (template, values)
+
+    def test_few_iterations(self):
+        # this one will work with only a few iterations and repeats
+        template, values = self.generate_template_and_values(3, 3)
+        result = match(template, values).get_single()
+        self.assertTrue(result)
+
+    def test_many_iterations(self):
+        # this one will work with only a few iterations and repeats
+        template, values = self.generate_template_and_values(20, 5)
+        result = match(template, values).get_single()
+        # this code will never run b/c it stalls
+        self.assertTrue(result)
+
 
 if __name__ == '__main__':
     unittest.main()
